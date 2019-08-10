@@ -24,6 +24,15 @@ int main(int argc, char **argv) {
     DWORD quality = 85;
     DWORD quality_of_image = 0;
 
+    char location_to_save_raw[25];
+    strcat(location_to_save_raw, "/tmp/");
+    if (argv[1]) {
+        strcat(location_to_save_raw, argv[1]);
+    }
+    else {
+        return 0;
+    }
+    
     // Instantiate SGFPLib object
     err = CreateSGFPMObject(&sgfplib);
     if (!sgfplib) {
