@@ -24,5 +24,58 @@ int main(int argc, char **argv) {
     DWORD quality = 85;
     DWORD quality_of_image = 0;
 
-    
+    // Instantiate SGFPLib object
+    err = CreateSGFPMObject(&sgfplib);
+    if (!sgfplib) {
+        printf("ERROR - Unable to instantiate FPM object.\n\n");
+        return false;
+    }
+
+    // Init()
+    err = sgfplib->Init(SG_DEV_FDU07);
+    if (err != SGFDX_ERROR_NONE) {
+        printf("ERROR - Unable to initialize device.\n\n");
+        return 0;
+    }
+    if (err == SGFDX_ERROR_NONE) {
+
+        // OpenDevice()
+        err = sgfplib->OpenDevice(0);
+        if (err == SGFDX_ERROR_NONE) {
+            err = sgfplib->SetLedOn(true);
+            err = sgfplib->GetDeviceInfo(&deviceInfo);
+            if (err == SGFDX_ERROR_NONE) {
+                imageBuffer1 = (BYTE*) malloc(deviceInfo.ImageHeight*deviceInfo.ImageWidth);
+                err = sgfplib->GetImageEx(imageBuffer1,timeout,NULL,quality);
+                if (err == SGFDX_ERROR_NONE) {
+                    sprintf(kbBuffer,"%s1.raw","/tmp/TVE17MCA042");
+                    fp = fopen(kbBuffer,"wb");
+                    fwrite (imageBuffer1 , sizeof (BYTE) , deviceInfo.ImageWidth*deviceInfo.ImageHeight , fp);
+                    fclose(fp);
+                    err = sgfplib->SetLedOn(false);
+                    if (err == SGFDX_ERROR_NONE) {
+                        err = sgfplib->GetImageQuality(deviceInfo.ImageWidth, deviceInfo.ImageHeight, imageBuffer1, &quality_of_image);
+                        if (err == SGFDX_ERROR_NONE) {
+                            if (quality_of_image >95) {
+                                err = sgfplib->SetTemplateFormat(TEMPLATE_FORMAT_SG400);
+                                if (err == SGFDX_ERROR_NONE) {
+                                    err = sgfplib->GetMaxTemplateSize(&templateSizeMax);
+                                    if (err == SGFDX_ERROR_NONE) {
+                                        minutiaeBuffer1 = (BYTE*) malloc(templateSizeMax);
+                                        fingerInfo.ImageQuality = quality_of_image;
+                                        err = sgfplib->CreateTemplate(&fingerInfo, imageBuffer1, minutiaeBuffer1);
+                                        if (err == SGFDX_ERROR_NONE) {
+                                            printf("%ld",minutiaeBuffer1);
+                                            DestroySGFPMObject(sgfplib);
+                                            system("rm -rf /tmp/*");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
