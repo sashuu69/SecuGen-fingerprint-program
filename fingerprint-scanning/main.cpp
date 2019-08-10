@@ -24,15 +24,16 @@ int main(int argc, char **argv) {
     DWORD quality = 85;
     DWORD quality_of_image = 0;
 
-    char location_to_save_raw[25];
-    strcat(location_to_save_raw, "/tmp/");
+    char temp_location_to_save_raw[25];
+
     if (argv[1]) {
-        strcat(location_to_save_raw, argv[1]);
+        strcat(temp_location_to_save_raw, "/tmp/");
+        strcat(temp_location_to_save_raw, argv[1]);
     }
     else {
         return 0;
     }
-    
+
     // Instantiate SGFPLib object
     err = CreateSGFPMObject(&sgfplib);
     if (!sgfplib) {
@@ -57,7 +58,7 @@ int main(int argc, char **argv) {
                 imageBuffer1 = (BYTE*) malloc(deviceInfo.ImageHeight*deviceInfo.ImageWidth);
                 err = sgfplib->GetImageEx(imageBuffer1,timeout,NULL,quality);
                 if (err == SGFDX_ERROR_NONE) {
-                    sprintf(kbBuffer,"%s1.raw","/tmp/TVE17MCA042");
+                    sprintf(kbBuffer,"%s.raw",temp_location_to_save_raw);
                     fp = fopen(kbBuffer,"wb");
                     fwrite (imageBuffer1 , sizeof (BYTE) , deviceInfo.ImageWidth*deviceInfo.ImageHeight , fp);
                     fclose(fp);
@@ -76,7 +77,7 @@ int main(int argc, char **argv) {
                                         if (err == SGFDX_ERROR_NONE) {
                                             printf("%ld",minutiaeBuffer1);
                                             DestroySGFPMObject(sgfplib);
-                                            system("rm -rf /tmp/*");
+                                            // system("rm -rf /tmp/*");
                                         }
                                     }
                                 }
