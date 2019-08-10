@@ -17,4 +17,3 @@ all : $(FDU07_TARGET)
 
 $(FDU07_TARGET) : $(OBJS)
 	$(CPP) -o $@ $(OBJS) $(LIBS) -lsgfplib -lsgnfiq -lsgimage -lsgfpamx -lsgfdu07 -lusb -lpthread
-
