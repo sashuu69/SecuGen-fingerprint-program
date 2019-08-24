@@ -10,80 +10,39 @@ int   msg_qid;
 key_t key;
 struct msgbuf qbuf;
 
-
 LPSGFPM  sgfplib = NULL;
 
-bool StartAutoOn(LPSGFPM m_sgfplib)
-{
+bool StartAutoOn(LPSGFPM m_sgfplib) {
   DWORD result;
   bool StartAutoOn = false;
-  //////////////////////////////////////////////////////////////////////////
-  // Start Message Queue ///////////////////////////////////////////////////
-  // Create unique key via call to ftok() 
 
-  printf("Create unique message key\n");
-  key = ftok(".", 'a'); //'a' is an arbitrary seed value
-  // Open the queue - create if necessary 
+  key = ftok(".", 'a');  
 
-  if((msg_qid = msgget(key, IPC_CREAT|0660)) == -1)
-    return false;
+  if((msg_qid = msgget(key, IPC_CREAT|0660)) == -1) {
+    return false; 
+  }
 
-  printf("Message Queue ID is : %d\n",msg_qid);
-  // Start Message Queue ///////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////
-
-  //////////////////////////////////////////////////////////////////////////
-  // EnableAutoOnEvent(true)
-  printf("Call sgfplib->EnableAutoOnEvent(true) ... \n");  
-  result = m_sgfplib->EnableAutoOnEvent(true,&msg_qid,NULL);
-  printf("sgfplib->EnableAutoOnEvent()  returned ... ");  
+  result = m_sgfplib->EnableAutoOnEvent(true,&msg_qid,NULL); 
   if (result != SGFDX_ERROR_NONE)
   {
      printf("FAIL - [%ld]\n",result);  
   }
-  else
-  {
-     StartAutoOn = true;
-     printf("SUCCESS - [%ld]\n",result);  
-  }
-  printf(".............................................................\n");  
   return StartAutoOn;
 }
 
-bool StopAutoOn(LPSGFPM m_sgfplib)
-{
+bool StopAutoOn(LPSGFPM m_sgfplib) {
   DWORD result;
-  bool StopAutoOn = false;
-  //////////////////////////////////////////////////////////////////////////
-  // EnableAutoOnEvent(false)
-  printf("Calling ISensor::EnableAutoOnEvent(false) ... \n");  
-  result = m_sgfplib->EnableAutoOnEvent(false,&msg_qid,NULL);
-  printf("sgfplib->EnableAutoOnEvent(false)  returned ... ");  
+  bool StopAutoOn = false; 
+  result = m_sgfplib->EnableAutoOnEvent(false,&msg_qid,NULL); 
   if (result != SGFDX_ERROR_NONE)
   {
      printf("FAIL - [%ld]\n",result);  
-  }
-  else
-  {
-     StopAutoOn = true;
-     printf("SUCCESS - [%ld]\n",result);  
-  }
-  printf(".............................................................\n");  
-
-  //////////////////////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////
-  // Remove Message Queue //////////////////////////////////////////////////
+  } 
   msgctl(msg_qid, IPC_RMID, 0);
-  // Remove Message Queue //////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////
-
   return StopAutoOn;
-
 }
 
-long fingerPresent()
-{
+long fingerPresent() {
    int fingerPresent = 0;
    printf("Reading message queue ...\n");
 
