@@ -2,8 +2,35 @@
 #include <stdlib.h>
 #include <string.h>
 #include "sgfplib.h"
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
 
 LPSGFPM  sgfplib = NULL;
+int   msg_qid;
+key_t key;
+struct msgbuf qbuf;
+
+bool StartAutoOn(LPSGFPM m_sgfplib) {
+  DWORD autoOnStatus;
+  bool StartAutoOn = false;
+
+  key = ftok(".", 'a');
+
+  if((msg_qid = msgget(key, IPC_CREAT|0660)) == -1)
+    return false;
+  autoOnStatus = m_sgfplib->EnableAutoOnEvent(true,&msg_qid,NULL);
+  printf("sgfplib->EnableAutoOnEvent()  returned ... ");  
+  if (autoOnStatus != SGFDX_ERROR_NONE)
+  {
+     printf("FAIL\n");  
+  }
+  else
+  {
+     StartAutoOn = true;  
+  }  
+  return StartAutoOn;
+}
 
 int main(int argc, char **argv) {
     long err;
@@ -24,16 +51,6 @@ int main(int argc, char **argv) {
     DWORD quality = 85;
     DWORD quality_of_image = 0;
 
-    char temp_location_to_save_raw[25];
-
-    if (argv[1]) {
-        strcat(temp_location_to_save_raw, "/tmp/");
-        strcat(temp_location_to_save_raw, argv[1]);
-    }
-    else {
-        return 0;
-    }
-
     // Instantiate SGFPLib object
     err = CreateSGFPMObject(&sgfplib);
     if (!sgfplib) {
@@ -47,37 +64,39 @@ int main(int argc, char **argv) {
         printf("ERROR - Unable to initialize device.\n\n");
         return 0;
     }
-    if (err == SGFDX_ERROR_NONE) {
 
+    if (err == SGFDX_ERROR_NONE) {
         // OpenDevice()
         err = sgfplib->OpenDevice(0);
         if (err == SGFDX_ERROR_NONE) {
-            err = sgfplib->SetLedOn(true);
-            err = sgfplib->GetDeviceInfo(&deviceInfo);
-            if (err == SGFDX_ERROR_NONE) {
-                imageBuffer1 = (BYTE*) malloc(deviceInfo.ImageHeight*deviceInfo.ImageWidth);
-                err = sgfplib->GetImageEx(imageBuffer1,timeout,NULL,quality);
+            if (StartAutoOn(sgfplib)) {
+                err = sgfplib->SetLedOn(true);
+                err = sgfplib->GetDeviceInfo(&deviceInfo);
                 if (err == SGFDX_ERROR_NONE) {
-                    sprintf(kbBuffer,"%s.raw",temp_location_to_save_raw);
-                    fp = fopen(kbBuffer,"wb");
-                    fwrite (imageBuffer1 , sizeof (BYTE) , deviceInfo.ImageWidth*deviceInfo.ImageHeight , fp);
-                    fclose(fp);
-                    err = sgfplib->SetLedOn(false);
+                    imageBuffer1 = (BYTE*) malloc(deviceInfo.ImageWidth*deviceInfo.ImageHeight);
+                    err = sgfplib->GetImageEx(imageBuffer1,timeout,NULL,quality);
                     if (err == SGFDX_ERROR_NONE) {
-                        err = sgfplib->GetImageQuality(deviceInfo.ImageWidth, deviceInfo.ImageHeight, imageBuffer1, &quality_of_image);
+                        sprintf(kbBuffer,"%s.raw","/tmp/temp_fingerprint");
+                        fp = fopen(kbBuffer,"wb");
+                        fwrite (imageBuffer1 , sizeof (BYTE) , deviceInfo.ImageWidth*deviceInfo.ImageHeight , fp);
+                        fclose(fp);
+                        err = sgfplib->SetLedOn(false);
                         if (err == SGFDX_ERROR_NONE) {
-                            if (quality_of_image >95) {
-                                err = sgfplib->SetTemplateFormat(TEMPLATE_FORMAT_SG400);
-                                if (err == SGFDX_ERROR_NONE) {
-                                    err = sgfplib->GetMaxTemplateSize(&templateSizeMax);
+                            err = sgfplib->GetImageQuality(deviceInfo.ImageWidth, deviceInfo.ImageHeight, imageBuffer1, &quality_of_image);
+                            if (err == SGFDX_ERROR_NONE) {
+                                if (quality_of_image >95) {
+                                    err = sgfplib->SetTemplateFormat(TEMPLATE_FORMAT_SG400);
                                     if (err == SGFDX_ERROR_NONE) {
-                                        minutiaeBuffer1 = (BYTE*) malloc(templateSizeMax);
-                                        fingerInfo.ImageQuality = quality_of_image;
-                                        err = sgfplib->CreateTemplate(&fingerInfo, imageBuffer1, minutiaeBuffer1);
+                                        err = sgfplib->GetMaxTemplateSize(&templateSizeMax);
                                         if (err == SGFDX_ERROR_NONE) {
-                                            printf("%ld",minutiaeBuffer1);
-                                            DestroySGFPMObject(sgfplib);
-                                            // system("rm -rf /tmp/*");
+                                            minutiaeBuffer1 = (BYTE*) malloc(templateSizeMax);
+                                            fingerInfo.ImageQuality = quality_of_image;
+                                            err = sgfplib->CreateTemplate(&fingerInfo, imageBuffer1, minutiaeBuffer1);
+                                            if (err == SGFDX_ERROR_NONE) {
+                                                printf("%s",minutiaeBuffer1);
+                                                DestroySGFPMObject(sgfplib);
+                                                system("rm -f /tmp/temp_fingerprint.raw");
+                                            }
                                         }
                                     }
                                 }
