@@ -109,47 +109,46 @@ int main(int argc, char **argv) {
         // OpenDevice()
         err = sgfplib->OpenDevice(0);
         if (err == SGFDX_ERROR_NONE) {
-            if (StartAutoOn(sgfplib)) {
-                while (1) {
-                    if (fingerpresent ()) {
-                        err = sgfplib->SetLedOn(true);
-                        err = sgfplib->GetDeviceInfo(&deviceInfo);
-                        if (err == SGFDX_ERROR_NONE) {
-                            imageBuffer1 = (BYTE*) malloc(deviceInfo.ImageWidth*deviceInfo.ImageHeight);
-                            err = sgfplib->GetImageEx(imageBuffer1,timeout,NULL,quality);
-                            if (err == SGFDX_ERROR_NONE) {
-                                sprintf(kbBuffer,"%s.raw","/tmp/temp_fingerprint");
-                                fp = fopen(kbBuffer,"wb");
-                                fwrite (imageBuffer1 , sizeof (BYTE) , deviceInfo.ImageWidth*deviceInfo.ImageHeight , fp);
-                                fclose(fp);
-                                err = sgfplib->SetLedOn(false);
-                                if (err == SGFDX_ERROR_NONE) {
-                                    err = sgfplib->GetImageQuality(deviceInfo.ImageWidth, deviceInfo.ImageHeight, imageBuffer1, &quality_of_image);
-                                    if (err == SGFDX_ERROR_NONE) {
-                                        if (quality_of_image >95) {
-                                            err = sgfplib->SetTemplateFormat(TEMPLATE_FORMAT_SG400);
-                                            if (err == SGFDX_ERROR_NONE) {
-                                                err = sgfplib->GetMaxTemplateSize(&templateSizeMax);
-                                                if (err == SGFDX_ERROR_NONE) {
-                                                    minutiaeBuffer1 = (BYTE*) malloc(templateSizeMax);
-                                                    fingerInfo.ImageQuality = quality_of_image;
-                                                    err = sgfplib->CreateTemplate(&fingerInfo, imageBuffer1, minutiaeBuffer1);
-                                                    if (err == SGFDX_ERROR_NONE) {
-                                                        printf("%s",minutiaeBuffer1);
-                                                        DestroySGFPMObject(sgfplib);
-                                                        // system("rm -f /tmp/temp_fingerprint.raw");
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+            err = sgfplib->GetDeviceInfo(&deviceInfo);
+            if (err == SGFDX_ERROR_NONE) {
+                imageBuffer1 = (BYTE*) malloc(deviceInfo.ImageWidth*deviceInfo.ImageHeight);
+                err = sgfplib->SetLedOn(true);
+                if (StartAutoOn(sgfplib)) {
+                    while (1) {
+                        if (fingerpresent ()) {
+                            printf("%ld",fingerpresent());
+                            // err = sgfplib->GetImageEx(imageBuffer1,timeout,NULL,quality);
+                            // if (err == SGFDX_ERROR_NONE) {
+                            //     sprintf(kbBuffer,"%s.raw","/tmp/temp_fingerprint");
+                            //     fp = fopen(kbBuffer,"wb");
+                            //     fwrite (imageBuffer1 , sizeof (BYTE) , deviceInfo.ImageWidth*deviceInfo.ImageHeight , fp);
+                            //     fclose(fp);
+                            //     err = sgfplib->SetLedOn(false);
+                            //     if (err == SGFDX_ERROR_NONE) {
+                            //         err = sgfplib->GetImageQuality(deviceInfo.ImageWidth, deviceInfo.ImageHeight, imageBuffer1, &quality_of_image);
+                            //         if (err == SGFDX_ERROR_NONE) {
+                            //             if (quality_of_image >95) {
+                            //                 err = sgfplib->SetTemplateFormat(TEMPLATE_FORMAT_SG400);
+                            //                 if (err == SGFDX_ERROR_NONE) {
+                            //                     err = sgfplib->GetMaxTemplateSize(&templateSizeMax);
+                            //                     if (err == SGFDX_ERROR_NONE) {
+                            //                         minutiaeBuffer1 = (BYTE*) malloc(templateSizeMax);
+                            //                         fingerInfo.ImageQuality = quality_of_image;
+                            //                         err = sgfplib->CreateTemplate(&fingerInfo, imageBuffer1, minutiaeBuffer1);
+                            //                         if (err == SGFDX_ERROR_NONE) {
+                            //                             printf("%s",minutiaeBuffer1);
+                            //                             DestroySGFPMObject(sgfplib);
+                            //                             // system("rm -f /tmp/temp_fingerprint.raw");
+                            //                         }
+                            //                     }
+                            //                 }
+                            //             }
+                            //         }
+                            //     }
+                            // }
                         }
-
                     }
-                }
+                }   
             }
         }
     }
