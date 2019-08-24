@@ -1,3 +1,15 @@
+/*************************************************************
+ *
+ * Author :      SecuGen Corporation
+ * Description : FDU04 Auto On  main.cpp source code module
+ * Copyright(c): 2009 SecuGen Corporation, All rights reserved
+ * History : 
+ * date        person   comments
+ * ======================================================
+ *
+ *
+ *************************************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,41 +22,79 @@ int   msg_qid;
 key_t key;
 struct msgbuf qbuf;
 
+
 LPSGFPM  sgfplib = NULL;
 
-bool StartAutoOn(LPSGFPM m_sgfplib) {
+bool StartAutoOn(LPSGFPM m_sgfplib)
+{
   DWORD result;
   bool StartAutoOn = false;
 
-  key = ftok(".", 'a');  
+//   printf("Create unique message key\n");
+  key = ftok(".", 'a'); //'a' is an arbitrary seed value
+  // Open the queue - create if necessary 
 
-  if((msg_qid = msgget(key, IPC_CREAT|0660)) == -1) {
-    return false; 
-  }
+  if((msg_qid = msgget(key, IPC_CREAT|0660)) == -1)
+    return false;
 
-  result = m_sgfplib->EnableAutoOnEvent(true,&msg_qid,NULL); 
+//   printf("Message Queue ID is : %d\n",msg_qid);
+  // Start Message Queue ///////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////////////////////
+  // EnableAutoOnEvent(true)
+  printf("Call sgfplib->EnableAutoOnEvent(true) ... \n");  
+  result = m_sgfplib->EnableAutoOnEvent(true,&msg_qid,NULL);
+  printf("sgfplib->EnableAutoOnEvent()  returned ... ");  
   if (result != SGFDX_ERROR_NONE)
   {
      printf("FAIL - [%ld]\n",result);  
   }
+  else
+  {
+     StartAutoOn = true;
+     printf("SUCCESS - [%ld]\n",result);  
+  }
+  printf(".............................................................\n");  
   return StartAutoOn;
 }
 
-bool StopAutoOn(LPSGFPM m_sgfplib) {
+bool StopAutoOn(LPSGFPM m_sgfplib)
+{
   DWORD result;
-  bool StopAutoOn = false; 
-  result = m_sgfplib->EnableAutoOnEvent(false,&msg_qid,NULL); 
+  bool StopAutoOn = false;
+  //////////////////////////////////////////////////////////////////////////
+  // EnableAutoOnEvent(false)
+  printf("Calling ISensor::EnableAutoOnEvent(false) ... \n");  
+  result = m_sgfplib->EnableAutoOnEvent(false,&msg_qid,NULL);
+  printf("sgfplib->EnableAutoOnEvent(false)  returned ... ");  
   if (result != SGFDX_ERROR_NONE)
   {
      printf("FAIL - [%ld]\n",result);  
-  } 
+  }
+  else
+  {
+     StopAutoOn = true;
+     printf("SUCCESS - [%ld]\n",result);  
+  }
+  printf(".............................................................\n");  
+
+  //////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////
+  // Remove Message Queue //////////////////////////////////////////////////
   msgctl(msg_qid, IPC_RMID, 0);
+  // Remove Message Queue //////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////
+
   return StopAutoOn;
+
 }
 
-long fingerPresent() {
+long fingerPresent()
+{
    int fingerPresent = 0;
-   printf("Reading message queue ...\n");
+//    printf("Reading message queue ...\n");
 
 #ifdef _FDU07
  #if defined(_XOPEN_SOURCE)
@@ -112,7 +162,7 @@ long fingerPresent() {
 	   }
     #else
 	   msgrcv(msg_qid, (struct msgbuf *)&qbuf, MAX_SEND_SIZE, qbuf.mtype, 0);
-	   printf("Type: %ld Text: %s\n", qbuf.mtype, qbuf.mtext);
+	//    printf("Type: %ld Text: %s\n", qbuf.mtype, qbuf.mtext);
 	   if (strlen(qbuf.mtext) > 0)
 	   {
 	      fingerPresent= atol(qbuf.mtext);
@@ -131,51 +181,36 @@ long fingerPresent() {
 
 
 // ---------------------------------------------------------------- main() ---
-int main(int argc, char **argv) 
-{
+int main(int argc, char **argv) {
 
-     long err;
-     BYTE* imageBuffer1;
-     int   msg_qid;
-     SGDeviceInfoParam deviceInfo;
+    long err;
+    BYTE* imageBuffer1;
+    int   msg_qid;
+    SGDeviceInfoParam deviceInfo;
 
-
-     printf("\n-------------------------------------\n");
-     printf(  "SecuGen Auto-On Test\n");
-     printf(  "-------------------------------------\n");
-
-     ///////////////////////////////////////////////
-     // Instantiate SGFPLib object
-     err = CreateSGFPMObject(&sgfplib);
-     if (!sgfplib)
-     {
-     	printf("ERROR - Unable to instantiate FPM object\n");
+    err = CreateSGFPMObject(&sgfplib);
+    if (!sgfplib) {
+        printf("ERROR - Unable to instantiate FPM object\n");
      	return false;
-     }
-     printf("CreateSGFPMObject returned: %ld\n",err);
-
-	
-     if (err == SGFDX_ERROR_NONE)
-     {
-
+    }
+    
+    if (err == SGFDX_ERROR_NONE) {
         ///////////////////////////////////////////////
         // Init()
-        printf("Call sgfplib->Init(SG_DEV_AUTO)\n");
-        err = sgfplib->Init(SG_DEV_AUTO);
-        printf("Init returned: %ld\n",err);
+        err = sgfplib->Init(SG_DEV_FDU07);
+        ///////////////////////////////////////////////
 
         ///////////////////////////////////////////////
         // OpenDevice()
-        printf("Call sgfplib->OpenDevice(0)\n");
         err = sgfplib->OpenDevice(0);
-        printf("OpenDevice returned : [%ld]\n\n",err);
+        ///////////////////////////////////////////////
 
         ///////////////////////////////////////////////
         // getDeviceInfo()
         err = sgfplib->GetDeviceInfo(&deviceInfo);
-        printf("GetDeviceInfo returned: %ld\n\n",err);
+        ///////////////////////////////////////////////
 
- 	imageBuffer1 = (BYTE*) malloc(deviceInfo.ImageWidth*deviceInfo.ImageHeight);
+ 	    imageBuffer1 = (BYTE*) malloc(deviceInfo.ImageWidth*deviceInfo.ImageHeight);
 
         if (StartAutoOn(sgfplib))
         {  
