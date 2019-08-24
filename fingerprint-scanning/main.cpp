@@ -33,43 +33,44 @@ bool StartAutoOn(LPSGFPM m_sgfplib) {
 long fingerpresent() {
     int fingerPresent = 0;
 
-    #ifdef _FDU07
-        #if defined(_XOPEN_SOURCE)
-            #if defined(LINUX3)
-                qbuf.mtype = FDU07_MSG;
-            #else
-                qbuf._mtype = FDU07_MSG;
-            #endif
-        #else
-            qbuf.mtype = FDU07_MSG;
-        #endif
-    #endif
+#ifdef _FDU07
+ #if defined(_XOPEN_SOURCE)
+   #if defined(LINUX3)
+           qbuf.mtype = FDU07_MSG;
+   #else
+           qbuf._mtype = FDU07_MSG;
+   #endif
+ #else
+           qbuf.mtype = FDU07_MSG;
+ #endif
+#endif
 
     #if defined(_XOPEN_SOURCE)
-        #if defined(LINUX3)
-            msgrcv(msg_qid, (struct msgbuf *)&qbuf, MAX_SEND_SIZE, qbuf.mtype, 0);
-            // printf("Type: %ld Text: %s\n", qbuf.mtype, qbuf.mtext);
-            if (strlen(qbuf.mtext) > 0)
-            {
-                fingerPresent= atol(qbuf.mtext);
-            }
-        #else
-            msgrcv(msg_qid, (struct msgbuf *)&qbuf, MAX_SEND_SIZE, qbuf.mtype, 0);
-            // printf("Type: %ld Text: %s\n", qbuf._mtype, qbuf._mtext);
-            if (strlen(qbuf.mtext) > 0) {
-                fingerPresent= atol(qbuf.mtext);
-            }
-        #endif
+    #if defined(LINUX3)
+	   msgrcv(msg_qid, (struct msgbuf *)&qbuf, MAX_SEND_SIZE, qbuf.mtype, 0);
+	   printf("Type: %ld Text: %s\n", qbuf.mtype, qbuf.mtext);
+	   if (strlen(qbuf.mtext) > 0)
+	   {
+	      fingerPresent= atol(qbuf.mtext);
+	   }
     #else
-        msgrcv(msg_qid, (struct msgbuf *)&qbuf, MAX_SEND_SIZE, qbuf.mtype, 0);
-        // printf("Type: %ld Text: %s\n", qbuf.mtype, qbuf.mtext);
-        if (strlen(qbuf.mtext) > 0)
-        {
-            fingerPresent= atol(qbuf.mtext);
-        }
-    #endif
-
-    return fingerPresent;
+	   msgrcv(msg_qid, (struct msgbuf *)&qbuf, MAX_SEND_SIZE, qbuf.mtype, 0);
+    //    if (strcmp(qbuf.mtext,"1") == 0)
+    //     printf("Type: %ld Text: %s\n", qbuf.mtype, qbuf.mtext);
+	   if (strlen(qbuf.mtext) > 0)
+	   {
+	      fingerPresent= atol(qbuf.mtext);
+	   }
+   #endif
+#else
+   msgrcv(msg_qid, (struct msgbuf *)&qbuf, MAX_SEND_SIZE, qbuf.mtype, 0);
+   printf("Type: %ld Text: %s\n", qbuf.mtype, qbuf.mtext);
+   if (strlen(qbuf.mtext) > 0)
+   {
+      fingerPresent= atol(qbuf.mtext);
+   }
+#endif
+   return fingerPresent;
 }
 
 int main(int argc, char **argv) {
@@ -116,7 +117,7 @@ int main(int argc, char **argv) {
                 if (StartAutoOn(sgfplib)) {
                     while (1) {
                         if (fingerpresent ()) {
-                            printf("%ld",fingerpresent());
+                            printf("hi");
                             // err = sgfplib->GetImageEx(imageBuffer1,timeout,NULL,quality);
                             // if (err == SGFDX_ERROR_NONE) {
                             //     sprintf(kbBuffer,"%s.raw","/tmp/temp_fingerprint");
