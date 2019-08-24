@@ -1,15 +1,3 @@
-/*************************************************************
- *
- * Author :      SecuGen Corporation
- * Description : FDU04 Auto On  main.cpp source code module
- * Copyright(c): 2009 SecuGen Corporation, All rights reserved
- * History : 
- * date        person   comments
- * ======================================================
- *
- *
- *************************************************************/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,76 +13,48 @@ struct msgbuf qbuf;
 
 LPSGFPM  sgfplib = NULL;
 
-bool StartAutoOn(LPSGFPM m_sgfplib)
-{
-  DWORD result;
-  bool StartAutoOn = false;
+bool StartAutoOn(LPSGFPM m_sgfplib) {
+    DWORD result;
+    bool StartAutoOn = false;
 
-//   printf("Create unique message key\n");
-  key = ftok(".", 'a'); //'a' is an arbitrary seed value
-  // Open the queue - create if necessary 
+    key = ftok(".", 'a');
 
-  if((msg_qid = msgget(key, IPC_CREAT|0660)) == -1)
-    return false;
+    if((msg_qid = msgget(key, IPC_CREAT|0660)) == -1)
+        return false;
 
-//   printf("Message Queue ID is : %d\n",msg_qid);
-  // Start Message Queue ///////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////
-
-  //////////////////////////////////////////////////////////////////////////
-  // EnableAutoOnEvent(true)
-  printf("Call sgfplib->EnableAutoOnEvent(true) ... \n");  
-  result = m_sgfplib->EnableAutoOnEvent(true,&msg_qid,NULL);
-  printf("sgfplib->EnableAutoOnEvent()  returned ... ");  
-  if (result != SGFDX_ERROR_NONE)
-  {
-     printf("FAIL - [%ld]\n",result);  
-  }
-  else
-  {
-     StartAutoOn = true;
-     printf("SUCCESS - [%ld]\n",result);  
-  }
-  printf(".............................................................\n");  
-  return StartAutoOn;
+    result = m_sgfplib->EnableAutoOnEvent(true,&msg_qid,NULL);
+    if (result != SGFDX_ERROR_NONE) {
+        printf("FAIL - [%ld]\n",result);  
+    }
+    else {
+        StartAutoOn = true; 
+    } 
+    return StartAutoOn;
 }
 
-bool StopAutoOn(LPSGFPM m_sgfplib)
-{
-  DWORD result;
-  bool StopAutoOn = false;
-  //////////////////////////////////////////////////////////////////////////
-  // EnableAutoOnEvent(false)
-  printf("Calling ISensor::EnableAutoOnEvent(false) ... \n");  
-  result = m_sgfplib->EnableAutoOnEvent(false,&msg_qid,NULL);
-  printf("sgfplib->EnableAutoOnEvent(false)  returned ... ");  
-  if (result != SGFDX_ERROR_NONE)
-  {
-     printf("FAIL - [%ld]\n",result);  
-  }
-  else
-  {
-     StopAutoOn = true;
-     printf("SUCCESS - [%ld]\n",result);  
-  }
-  printf(".............................................................\n");  
+bool StopAutoOn(LPSGFPM m_sgfplib) {
+    DWORD result;
+    bool StopAutoOn = false;
 
-  //////////////////////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////
-  // Remove Message Queue //////////////////////////////////////////////////
-  msgctl(msg_qid, IPC_RMID, 0);
-  // Remove Message Queue //////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    // EnableAutoOnEvent(false)  
+    result = m_sgfplib->EnableAutoOnEvent(false,&msg_qid,NULL);
+    if (result != SGFDX_ERROR_NONE) {
+        printf("FAIL - [%ld]\n",result);  
+    }
+    else {
+        StopAutoOn = true; 
+    }
+    //////////////////////////////////////////////////////////////////////////
 
-  return StopAutoOn;
+    msgctl(msg_qid, IPC_RMID, 0);
 
+    return StopAutoOn;
 }
 
 long fingerPresent()
 {
    int fingerPresent = 0;
-//    printf("Reading message queue ...\n");
 
 #ifdef _FDU07
  #if defined(_XOPEN_SOURCE)
@@ -155,14 +115,12 @@ long fingerPresent()
 #if defined(_XOPEN_SOURCE)
     #if defined(LINUX3)
 	   msgrcv(msg_qid, (struct msgbuf *)&qbuf, MAX_SEND_SIZE, qbuf.mtype, 0);
-	   printf("Type: %ld Text: %s\n", qbuf.mtype, qbuf.mtext);
 	   if (strlen(qbuf.mtext) > 0)
 	   {
 	      fingerPresent= atol(qbuf.mtext);
 	   }
     #else
 	   msgrcv(msg_qid, (struct msgbuf *)&qbuf, MAX_SEND_SIZE, qbuf.mtype, 0);
-	//    printf("Type: %ld Text: %s\n", qbuf.mtype, qbuf.mtext);
 	   if (strlen(qbuf.mtext) > 0)
 	   {
 	      fingerPresent= atol(qbuf.mtext);
@@ -170,7 +128,6 @@ long fingerPresent()
    #endif
 #else
    msgrcv(msg_qid, (struct msgbuf *)&qbuf, MAX_SEND_SIZE, qbuf.mtype, 0);
-   printf("Type: %ld Text: %s\n", qbuf.mtype, qbuf.mtext);
    if (strlen(qbuf.mtext) > 0)
    {
       fingerPresent= atol(qbuf.mtext);
@@ -187,13 +144,14 @@ int main(int argc, char **argv) {
     BYTE* imageBuffer1;
     int   msg_qid;
     SGDeviceInfoParam deviceInfo;
+    DWORD quality_of_image = 0;
 
     err = CreateSGFPMObject(&sgfplib);
     if (!sgfplib) {
         printf("ERROR - Unable to instantiate FPM object\n");
      	return false;
     }
-    
+
     if (err == SGFDX_ERROR_NONE) {
         ///////////////////////////////////////////////
         // Init()
@@ -211,34 +169,34 @@ int main(int argc, char **argv) {
         ///////////////////////////////////////////////
 
  	    imageBuffer1 = (BYTE*) malloc(deviceInfo.ImageWidth*deviceInfo.ImageHeight);
+        
+        ///////////////////////////////////////////////
+        // Turn fingerprint LED ON
+        sgfplib->SetLedOn(true);
+        ///////////////////////////////////////////////
 
-        if (StartAutoOn(sgfplib))
-        {  
-         while (1)
-         {
-           if (fingerPresent())
-           {
-             printf("Finger Present\n");
-	     if (!StopAutoOn(sgfplib))
-             {
-                 printf("StopAutoOn() returned false.\n");
-                 break;                
-             }
-             printf("Call ISensor::GetImage()\n");
-             err = sgfplib->GetImage(imageBuffer1);
-             printf("ISensor::GetImage() returned ... ");  
-             if (err != SGFDX_ERROR_NONE)
-             {
-                printf("FAIL - [%ld]\n",err);
-             }
-             else
-             {
-                printf("SUCCESS - [%ld]\n",err);
-                FILE *fp = fopen("test_auto_on_finger.raw","wb");
-                fwrite (imageBuffer1 , sizeof (BYTE) , deviceInfo.ImageWidth*deviceInfo.ImageHeight , fp);
-                fclose(fp);
-                fp = NULL;
-             }
+        if (StartAutoOn(sgfplib)) {
+            while (1) {
+                if (fingerPresent()) {
+	                if (!StopAutoOn(sgfplib)) {
+                        break;                
+                    }
+                    err = sgfplib->GetImage(imageBuffer1);  
+                    if (err != SGFDX_ERROR_NONE) {
+                        printf("FAIL - [%ld]\n",err);
+                    }
+                    else {
+                        FILE *fp = fopen("/tmp/exammarker_temp_fp.raw","wb");
+                        fwrite (imageBuffer1,sizeof (BYTE),deviceInfo.ImageWidth*deviceInfo.ImageHeight, fp);
+                        fclose(fp);
+                        fp = NULL;
+                        err = sgfplib->GetImageQuality(deviceInfo.ImageWidth, deviceInfo.ImageHeight, imageBuffer1, &quality_of_image);
+                        if (quality_of_image > 95) {
+                            sgfplib->SetLedOn(false);
+                            err = sgfplib->SetTemplateFormat(TEMPLATE_FORMAT_SG400);
+                        }
+
+                    }
              printf(".............................................................\n");
              printf("Press 'X' to exit, any other key to continue >> ");
              if (getc(stdin) == 'X')
