@@ -1,7 +1,7 @@
 PORT = linux3
 
 PORT = linux3
-CFLAGS = -D__cplusplus -Wall -O
+CFLAGS = -D__cplusplus -Wall -O -DLINUX3
 CPP=g++
 CC=gcc
 INCPATH = ./
