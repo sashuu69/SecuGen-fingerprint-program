@@ -142,9 +142,12 @@ int main(int argc, char **argv) {
 
     long err;
     BYTE* imageBuffer1;
+    BYTE *minutiaeBuffer1;
     int   msg_qid;
     SGDeviceInfoParam deviceInfo;
     DWORD quality_of_image = 0;
+    DWORD templateSizeMax;
+    SGFingerInfo fingerInfo;
 
     err = CreateSGFPMObject(&sgfplib);
     if (!sgfplib) {
@@ -187,6 +190,7 @@ int main(int argc, char **argv) {
                     }
                     else {
                         FILE *fp = fopen("/tmp/exammarker_temp_fp.raw","wb");
+                        // 252 * 330
                         fwrite (imageBuffer1,sizeof (BYTE),deviceInfo.ImageWidth*deviceInfo.ImageHeight, fp);
                         fclose(fp);
                         fp = NULL;
@@ -194,51 +198,34 @@ int main(int argc, char **argv) {
                         if (quality_of_image > 95) {
                             sgfplib->SetLedOn(false);
                             err = sgfplib->SetTemplateFormat(TEMPLATE_FORMAT_SG400);
+                            err = sgfplib->GetMaxTemplateSize(&templateSizeMax);
+                            minutiaeBuffer1 = (BYTE*) malloc(templateSizeMax);
+                            fingerInfo.ImageQuality = quality_of_image;
+                            err = sgfplib->CreateTemplate(&fingerInfo, imageBuffer1, minutiaeBuffer1);
+                            if (err == SGFDX_ERROR_NONE) {
+                                printf("%s",minutiaeBuffer1);
+                                break;
+                            }
                         }
-
                     }
-             printf(".............................................................\n");
-             printf("Press 'X' to exit, any other key to continue >> ");
-             if (getc(stdin) == 'X')
-               break;
-  	     if(!StartAutoOn(sgfplib))
-             {
-                 printf("StartAutoOn() returned false.\n");
-                 break;
-             }
-           }
-         }
+                }
+            }
         }
 
-        //////////////////////////////////////////////////////////////////////////
-        // EnableAutoOnEvent(false)
-        printf("Call sgfplib->EnableAutoOnEvent(false) ... \n");
         err = sgfplib->EnableAutoOnEvent(false,&msg_qid,NULL);
-        printf("EnableAutoOnEvent returned : [%ld]\n", err);
-
-        //////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////
-        // Remove Message Queue //////////////////////////////////////////////////
         msgctl(msg_qid, IPC_RMID, 0);
-        // Remove Message Queue //////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////
 
         ///////////////////////////////////////////////
         // closeDevice()
-        printf("\nCall fplib->CloseDevice()\n");
         err = sgfplib->CloseDevice();
-        printf("CloseDevice returned : [%ld]\n",err);
+        ///////////////////////////////////////////////
 
         ///////////////////////////////////////////////
         // Destroy FPLib object
-        printf("\nCall DestroySGFPMObject(fplib)\n");
         err = DestroySGFPMObject(sgfplib);
-        printf("DestroySGFPMObject returned : [%ld]\n",err);
 
         free(imageBuffer1);
-        imageBuffer1 = NULL;
-		
-     }
-     return 0;
+        imageBuffer1 = NULL;	
+    }
+    return 0;
 }
