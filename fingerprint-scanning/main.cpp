@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
     long err;
     BYTE* imageBuffer1;
     BYTE *minutiaeBuffer1;
-    int   msg_qid;
+    int msg_qid;
     SGDeviceInfoParam deviceInfo;
     DWORD quality_of_image = 0;
     DWORD templateSizeMax;

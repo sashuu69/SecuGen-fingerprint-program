@@ -11,7 +11,7 @@ OBJS=	main.o
 
 SRCS=	main.cpp
 
-FDU07_TARGET = $(PORT)/sgfplibtest_fdu07
+FDU07_TARGET = $(PORT)/fingerprint-scanner
 
 all : $(FDU07_TARGET)
 
