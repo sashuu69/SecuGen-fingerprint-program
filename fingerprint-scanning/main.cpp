@@ -24,7 +24,7 @@ bool StartAutoOn(LPSGFPM m_sgfplib) {
 
     result = m_sgfplib->EnableAutoOnEvent(true,&msg_qid,NULL);
     if (result != SGFDX_ERROR_NONE) {
-        printf("FAIL - [%ld]\n",result);  
+        printf("FAIL EnableAutoOnEvent - [%ld]\n",result);  
     }
     else {
         StartAutoOn = true; 
@@ -35,12 +35,14 @@ bool StartAutoOn(LPSGFPM m_sgfplib) {
 bool StopAutoOn(LPSGFPM m_sgfplib) {
     DWORD result;
     bool StopAutoOn = false;
+    int errorr;
 
     //////////////////////////////////////////////////////////////////////////
     // EnableAutoOnEvent(false)  
     result = m_sgfplib->EnableAutoOnEvent(false,&msg_qid,NULL);
     if (result != SGFDX_ERROR_NONE) {
-        printf("FAIL - [%ld]\n",result);  
+        errorr = 1;
+        // printf("FAIL EnableAutoOnEvent - [%ld]\n",result);  
     }
     else {
         StopAutoOn = true; 
@@ -148,10 +150,12 @@ int main(int argc, char **argv) {
     DWORD quality_of_image = 0;
     DWORD templateSizeMax;
     SGFingerInfo fingerInfo;
+    int errorr;
 
     err = CreateSGFPMObject(&sgfplib);
     if (!sgfplib) {
-        printf("ERROR - Unable to instantiate FPM object\n");
+        errorr = 2;
+        // printf("ERROR - Unable to instantiate FPM object\n");
      	return false;
     }
 
@@ -186,7 +190,8 @@ int main(int argc, char **argv) {
                     }
                     err = sgfplib->GetImage(imageBuffer1);  
                     if (err != SGFDX_ERROR_NONE) {
-                        printf("FAIL - [%ld]\n",err);
+                        errorr = 3;
+                        // printf("FAIL GetImage - [%ld]\n",err);
                     }
                     else {
                         FILE *fp = fopen("/tmp/exammarker_temp_fp.raw","wb");
@@ -223,6 +228,7 @@ int main(int argc, char **argv) {
         ///////////////////////////////////////////////
         // Destroy FPLib object
         err = DestroySGFPMObject(sgfplib);
+        ///////////////////////////////////////////////
 
         free(imageBuffer1);
         imageBuffer1 = NULL;	
