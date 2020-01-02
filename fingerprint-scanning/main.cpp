@@ -5,6 +5,17 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include "sgfplib.h"
+#include <mysql/mysql.h>
+
+static char *host = "docker01.tharun.me";
+static char *user = "docker";
+static char *pass = "docker";
+static char *dbname = "exam-marker";
+
+unsigned int port = 3306;
+
+static char *unix_socket = NULL;
+unsigned int flag = 0;
 
 int   msg_qid;
 key_t key;
@@ -93,9 +104,7 @@ long fingerPresent()
 #endif
 #ifdef _FDU04
  #if defined(_XOPEN_SOURCE)
-    #if defined(LINUX3)
-           qbuf.mtype = FDU04_MSG;
-    #else
+    #if defined(LINUX3)                        // 252 * 330
            qbuf._mtype = FDU04_MSG;
     #endif
  #else
@@ -142,9 +151,17 @@ long fingerPresent()
 // ---------------------------------------------------------------- main() ---
 int main(int argc, char **argv) {
 
+    MYSQL *conn;
+    conn = mysql_init(NULL); 
+    if (!mysql_real_connect(conn, host, user, pass, dbname, port, unix_socket, flag)) {
+        fprintf(stderr, "Error: %s [%d]\n", mysql_error(conn), mysql_errno(conn));
+        exit(1);
+    }
+    // printf("Success!!!");
+
     long err;
     BYTE* imageBuffer1;
-    BYTE *minutiaeBuffer1;
+    BYTE* minutiaeBuffer1;
     int msg_qid;
     SGDeviceInfoParam deviceInfo;
     DWORD quality_of_image = 0;
@@ -191,12 +208,9 @@ int main(int argc, char **argv) {
                     err = sgfplib->GetImage(imageBuffer1);  
                     if (err != SGFDX_ERROR_NONE) {
                         errorr = 3;
-                        // printf("FAIL GetImage - [%ld]\n",err);
                     }
                     else {
-                        FILE *fp = fopen("/tmp/exammarker_temp_fp.raw","wb");
-                        // 252 * 330
-                        fwrite (imageBuffer1,sizeof (BYTE),deviceInfo.ImageWidth*deviceInfo.ImageHeight, fp);
+                        FILE *fp = fopen("/tmp/exammarker_temp_fp.raw","wb");                        fwrite (imageBuffer1,sizeof (BYTE),deviceInfo.ImageWidth*deviceInfo.ImageHeight, fp);
                         fclose(fp);
                         fp = NULL;
                         err = sgfplib->GetImageQuality(deviceInfo.ImageWidth, deviceInfo.ImageHeight, imageBuffer1, &quality_of_image);
@@ -208,7 +222,15 @@ int main(int argc, char **argv) {
                             fingerInfo.ImageQuality = quality_of_image;
                             err = sgfplib->CreateTemplate(&fingerInfo, imageBuffer1, minutiaeBuffer1);
                             if (err == SGFDX_ERROR_NONE) {
-                                printf("%s",minutiaeBuffer1);
+                                int escaped_size = 2 * sizeof(minutiaeBuffer1) + 1;
+                                char chunk[escaped_size];
+                                mysql_real_escape_string(conn, chunk, (const char*)minutiaeBuffer1, sizeof(minutiaeBuffer1));
+                                const char* query_template = "INSERT INTO `students_details`(`user_id`, `batch`, `roll_no`, `university_id`, `admission_id`, `fingerprint`, `enrolled`) VALUES ('100','1','46','TVE17MCA042','171152','%s', '100')";
+                                size_t template_len = strlen(query_template);
+                                int query_buffer_len = template_len + escaped_size;
+                                char query[query_buffer_len];
+                                int query_len = snprintf(query, query_buffer_len, query_template, chunk);
+                                mysql_real_query(conn, query, query_len);
                                 break;
                             }
                         }

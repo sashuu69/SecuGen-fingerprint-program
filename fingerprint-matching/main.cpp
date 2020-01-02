@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
 #include "sgfplib.h"
-
 #include <mysql/mysql.h>
 
 static char *host = "docker01.tharun.me";
@@ -12,6 +13,7 @@ static char *pass = "docker";
 static char *dbname = "exam-marker";
 
 unsigned int port = 3306;
+
 static char *unix_socket = NULL;
 unsigned int flag = 0;
 
