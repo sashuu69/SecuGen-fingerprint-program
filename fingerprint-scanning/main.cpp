@@ -104,7 +104,7 @@ long fingerPresent()
 #endif
 #ifdef _FDU04
  #if defined(_XOPEN_SOURCE)
-    #if defined(LINUX3)                        // 252 * 330
+    #if defined(LINUX3)                        
            qbuf._mtype = FDU04_MSG;
     #endif
  #else

@@ -17,4 +17,4 @@ FDU07_TARGET = $(PORT)/fingerprint-matching
 all : $(FDU07_TARGET)
 
 $(FDU07_TARGET) : $(OBJS)
-	$(CPP) -o $@ $(OBJS) -I/usr/include/mariadb -I/usr/include/mariadb/mysql $(LIBS) -lsgfplib -lsgnfiq -lsgimage -lsgfpamx -lsgfdu07 -lusb -lpthread -L/usr/lib/x86_64-linux-gnu/ -lmariadb -lz -ldl -lm -lpthread -lgnutls
+	$(CPP) -o $@ $(OBJS) $(mysql_config --cflags) $(LIBS) $(mysql_config --libs) -lsgfplib -lsgnfiq -lsgimage -lsgfpamx -lsgfdu07 -lusb -lpthread -lz -ldl -lm -lpthread -lgnutls -lmysqlclient

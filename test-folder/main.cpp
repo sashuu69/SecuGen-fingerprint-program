@@ -21,6 +21,7 @@ int main(int argc, char **argv) {
    }
    printf("Success!!!");
    mysql_query(conn,"insert into  testtable values('"+nId+"','"+szName+"','"+szPassword+"','"+szQuestion+"','"+szPhone+"')");
+   
    return EXIT_SUCCESS;
 }
 //gcc $(mysql_config --cflags) main.cpp $(mysql_config --libs)
