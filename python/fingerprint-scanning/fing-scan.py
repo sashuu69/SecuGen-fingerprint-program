@@ -93,15 +93,13 @@ def scanFingerPrint():
         insertStudentData = (100, 1, 46, "TVE17MCA042", 171152, studFingerPrintTemp, 100)
         result = cursor.execute(fingerprintInsertQuery, insertStudentData)
         connection.commit()
+        print(9) # Data insertion success
 
     except pymysql.Error as error :
         connection.rollback()
         dupError = format(error)
-        print("Data insertion failed " + dupError)
-        if dupError.find(' Duplicate entry') != -1:
-            print("KTU ID already registered")
-        else:
-            print("Data insertion failed")
+        print(8) # Data insertion failed
+
     finally:
         #closing database connection.
         cursor.close()
