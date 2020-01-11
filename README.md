@@ -1,1 +1,1 @@
-# SecuGen-cpp-program
+# SecuGen-fingerprint-program
