@@ -73,7 +73,7 @@ def scanFingerPrint():
     try:
         connection = pymysql.connect(host='docker01.tharun.me', database='exam-marker', user='docker', password='docker')
         cursor = connection.cursor()
-        cursor.execute("""SELECT fingerprint FROM students_details where university_id = "TVE17MCA042" """)
+        cursor.execute("""SELECT fingerprint FROM students_details where university_id = "TVE16AEI004" """)
 
         record = cursor.fetchall()
 
