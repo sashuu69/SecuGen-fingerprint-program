@@ -8,8 +8,6 @@ fingerPrintImageHeight = 330
 constant_sg400_template_size = 400
 fingerprintImageSize = (fingerPrintImageWidth, fingerPrintImageHeight)
 
-sgfplib = PYSGFPLib()
-
 def initialiseFingerprint():
     result = sgfplib.Create()
     if (result != SGFDxErrorCode.SGFDX_ERROR_NONE):
@@ -90,7 +88,7 @@ def scanFingerPrint():
 
         studFingerPrintTemp = convertToBinaryData("/tmp/test1.min")
         fingerprintInsertQuery = """INSERT INTO `students_details`(`user_id`, `batch`, `roll_no`, `university_id`, `admission_id`, `fingerprint`, `enrolled`) VALUES (%s,%s,%s,%s,%s,%s,%s) """
-        insertStudentData = (100, 1, 46, "TVE17MCA042", 171152, studFingerPrintTemp, 100)
+        insertStudentData = (100, 1, 46, "TVE17MCA042", 171152, pymysql.Binary(studFingerPrintTemp), 100)
         result = cursor.execute(fingerprintInsertQuery, insertStudentData)
         connection.commit()
         print(9) # Data insertion success
@@ -107,5 +105,6 @@ def scanFingerPrint():
 
 
 if "__main__" == __name__:
+    sgfplib = PYSGFPLib()
     initialiseFingerprint()
     
